@@ -7,6 +7,7 @@ import RangeTouch from 'rangetouch';
 
 import captions from './captions';
 import html5 from './html5';
+import reactions from './reactions';
 import support from './support';
 import { repaint, transitionEndEvent } from './utils/animation';
 import { dedupe } from './utils/arrays';
@@ -1275,6 +1276,7 @@ const controls = {
       showMenuPanel,
     } = controls;
     this.elements.controls = null;
+    this.elements.reactions = null;
 
     // Larger overlaid play button
     if (is.array(this.config.controls) && this.config.controls.includes('play-large')) {
@@ -1288,8 +1290,15 @@ const controls = {
     // Default item attributes
     const defaultAttributes = { class: 'plyr__controls__item' };
 
+    // Controls in order; when reactions are on, add the control if the brand's own list doesn't have it
+    const list = dedupe(is.array(this.config.controls) ? this.config.controls : []);
+    if (this.config.reactions && this.config.reactions.enabled === true && !list.includes('reactions')) {
+      const index = list.indexOf('fullscreen');
+      list.splice(index === -1 ? list.length : index, 0, 'reactions');
+    }
+
     // Loop through controls in order
-    dedupe(is.array(this.config.controls) ? this.config.controls : []).forEach((control) => {
+    list.forEach((control) => {
       // Restart button
       if (control === 'restart') {
         container.appendChild(createButton.call(this, 'restart', defaultAttributes));
@@ -1403,6 +1412,14 @@ const controls = {
               }),
             ),
           );
+        }
+      }
+
+      // Reactions button and row (only when enabled, see reactions.js)
+      if (control === 'reactions') {
+        const wrapper = reactions.create.call(this, defaultAttributes);
+        if (wrapper) {
+          container.appendChild(wrapper);
         }
       }
 

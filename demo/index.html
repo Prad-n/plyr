@@ -25,6 +25,19 @@
         font-size: 0.875rem;
         color: #52606d;
       }
+      /* Phone-sized column for the vertical (9:16) player */
+      .vertical {
+        max-width: 360px;
+      }
+      .log {
+        min-height: 4em;
+        padding: 8px;
+        overflow-x: auto;
+        background: #fff;
+        border: 1px solid #d9dee3;
+        border-radius: 4px;
+        font-size: 0.8125rem;
+      }
     </style>
   </head>
   <body>
@@ -32,6 +45,12 @@
       <h1>Plyr demo (local build)</h1>
       <p>
         Loads <code>dist/plyr.css</code>, <code>dist/plyr.js</code> and <code>dist/plyr.svg</code> from this repository.
+      </p>
+
+      <h2>Reactions off (default)</h2>
+      <p>
+        Default setup with no <code>reactions</code> option, so there's no React button: players that don't turn
+        reactions on are unchanged.
       </p>
 
       <video id="player" playsinline controls>
@@ -43,6 +62,39 @@
         <a href="https://durian.blender.org/">durian.blender.org</a>, licensed under
         <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
       </p>
+
+      <h2>Reactions on (FEAT-001), vertical 9:16</h2>
+      <p>
+        Reactions are turned on for the brand in the setup below, and the video has its own ID in
+        <code>data-plyr-video-id</code>. Your reaction is kept in this browser's <code>localStorage</code>; each change
+        is logged below as a <code>reaction</code> event.
+      </p>
+
+      <div class="vertical">
+        <video id="vertical-player" playsinline controls data-plyr-video-id="demo-nimrod-waterfall">
+          <source
+            src="https://upload.wikimedia.org/wikipedia/commons/transcoded/9/9f/Mt_Nimrod_Scenic_Reserve_-_Waterfall_on_Nimrod_Stream_%28video%29.webm/Mt_Nimrod_Scenic_Reserve_-_Waterfall_on_Nimrod_Stream_%28video%29.webm.480p.vp9.webm"
+            type="video/webm"
+          />
+          <source
+            src="https://upload.wikimedia.org/wikipedia/commons/transcoded/9/9f/Mt_Nimrod_Scenic_Reserve_-_Waterfall_on_Nimrod_Stream_%28video%29.webm/Mt_Nimrod_Scenic_Reserve_-_Waterfall_on_Nimrod_Stream_%28video%29.webm.360p.mpeg4.mov"
+            type="video/quicktime"
+          />
+        </video>
+      </div>
+
+      <p class="credit">
+        Video:
+        <a
+          href="https://commons.wikimedia.org/wiki/File:Mt_Nimrod_Scenic_Reserve_-_Waterfall_on_Nimrod_Stream_(video).webm"
+          >Mt Nimrod Scenic Reserve - Waterfall on Nimrod Stream</a
+        >
+        by David Nind, Wikimedia Commons, released under
+        <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0</a> (public domain dedication).
+      </p>
+
+      <p><button type="button" id="clear-reaction">Clear stored reactions</button></p>
+      <pre class="log" id="reaction-log" aria-live="polite">No reaction events yet.</pre>
     </main>
 
     <script src="../dist/plyr.js"></script>
@@ -50,6 +102,37 @@
       // Default controls; icons come from the local sprite instead of cdn.plyr.io.
       window.player = new Plyr('#player', {
         iconUrl: '../dist/plyr.svg',
+      });
+
+      // Reactions on a vertical video. Set ratio here, when the player is created:
+      // the runtime player.ratio setter ignores strings like '9:16' (issue #5).
+      window.verticalPlayer = new Plyr('#vertical-player', {
+        iconUrl: '../dist/plyr.svg',
+        ratio: '9:16',
+        reactions: {
+          enabled: true,
+          channel: 'Web',
+          brand: 'Demo Brand',
+        },
+      });
+
+      // Show each reaction event as a brand's analytics code would receive it
+      const log = document.getElementById('reaction-log');
+      const lines = [];
+      window.verticalPlayer.on('reaction', (event) => {
+        const { video_id, reaction, channel, brand } = event.detail;
+        lines.unshift(`${new Date().toLocaleTimeString()}  ${JSON.stringify({ video_id, reaction, channel, brand })}`);
+        log.textContent = lines.join('\n');
+      });
+
+      // Clear the stored reactions (Plyr keeps them under "reactions" in its "plyr" localStorage key)
+      document.getElementById('clear-reaction').addEventListener('click', () => {
+        try {
+          const store = JSON.parse(window.localStorage.getItem('plyr') || '{}');
+          delete store.reactions;
+          window.localStorage.setItem('plyr', JSON.stringify(store));
+        } catch {}
+        window.location.reload();
       });
     </script>
   </body>

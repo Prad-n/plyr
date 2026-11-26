@@ -24,6 +24,7 @@ controls: [
   'duration', // The full duration of the media
   'mute', // Toggle mute
   'volume', // Volume control
+  'reactions', // React button and reaction row; only shown when the `reactions` option is enabled
   'captions', // Toggle captions
   'settings', // Settings menu
   'pip', // Picture-in-picture (currently Safari only)

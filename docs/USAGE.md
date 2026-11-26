@@ -431,6 +431,8 @@ Note the single quotes encapsulating the JSON and double quotes on the object ke
 | `fullscreen`         | Object                     | `{ enabled: true, fallback: true, iosNative: false, container: null }`                                                         | `enabled`: Toggles whether fullscreen should be enabled. `fallback`: Allow fallback to a full-window solution (`true`/`false`/`'force'`). `iosNative`: whether to use native iOS fullscreen when entering fullscreen (no custom controls). `container`: A selector for an ancestor of the player element, allows contextual content to remain visual in fullscreen mode. Non-ancestors are ignored.     |
 | `ratio`              | String                     | `null`                                                                                                                         | Force an aspect ratio for all videos. The format is `'w:h'` - e.g. `'16:9'` or `'4:3'`. If this is not specified then the default for HTML5 and Vimeo is to use the native resolution of the video. As dimensions are not available from YouTube via SDK, 16:9 is forced as a sensible default.                                                                                                         |
 | `storage`            | Object                     | `{ enabled: true, key: 'plyr' }`                                                                                               | `enabled`: Allow use of local storage to store user settings. `key`: The key name to use.                                                                                                                                                                                                                                                                                                               |
+| `videoId`            | String                     | `null`                                                                                                                         | The brand's own ID for this video. Used by [reactions](#reactions) as `video_id` and to remember the viewer's reaction. A `data-plyr-video-id` attribute on the media element takes precedence.                                                                                                                                                                                                         |
+| `reactions`          | Object                     | `{ enabled: false, channel: 'Web', brand: '' }`                                                                                | Viewer reactions, off by default. Set once per brand; the same for every video. See [Reactions](#reactions).                                                                                                                                                                                                                                                                                            |
 | `speed`              | Object                     | `{ selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4] }`                                                              | `selected`: The default speed for playback. `options`: The speed options to display in the UI. YouTube and Vimeo will ignore any options outside of the 0.5-2 range, so options outside of this range will be hidden automatically.                                                                                                                                                                     |
 | `quality`            | Object                     | `{ default: 576, options: [4320, 2880, 2160, 1440, 1080, 720, 576, 480, 360, 240] }`                                           | `default` is the default quality level (if it exists in your sources). `options` are the options to display. This is used to filter the available sources.                                                                                                                                                                                                                                              |
 | `loop`               | Object                     | `{ active: false }`                                                                                                            | `active`: Whether to loop the current video. If the `loop` attribute is present on a `<video>` or `<audio>` element, this will be automatically set to true This is an object to support future functionality.                                                                                                                                                                                          |
@@ -712,6 +714,7 @@ player.on('ready', (event) => {
 | `emptied`        | he media has become empty; for example, this event is sent if the media has already been loaded (or partially loaded), and the `load()` method is called to reload it.                                                                                                                                                                         |
 | `cuechange`      | Sent when a `TextTrack` has changed the currently displaying cues.                                                                                                                                                                                                                                                                             |
 | `error`          | Sent when an error occurs. The element's `error` attribute contains more information.                                                                                                                                                                                                                                                          |
+| `reaction`       | Sent when the viewer picks, switches or removes a reaction. See [Reactions](#reactions).                                                                                                                                                                                                                                                       |
 
 #### YouTube only
 
@@ -752,6 +755,58 @@ document then the shortcuts will work when any element has focus, apart from an 
 | `F`        | Toggle fullscreen                      |
 | `C`        | Toggle captions                        |
 | `L`        | Toggle loop                            |
+
+## Reactions
+
+Viewers can react to an HTML5 video. They tap the React button, pick one reaction from a small row above it, and see their earlier reaction when they come back to the same video. Picking a different reaction switches to it; picking the same one again removes it. Reactions are off by default.
+
+**Turn it on once for the brand**, in the options, `Plyr.defaults` or `data-plyr-config`, and **give each video its ID** with `data-plyr-video-id` (or the `videoId` option):
+
+```html
+<video id="player" playsinline controls data-plyr-video-id="brand-video-123">
+  <source src="/path/to/video.mp4" type="video/mp4" />
+</video>
+```
+
+```js
+const player = new Plyr('#player', {
+  ratio: '9:16', // for vertical video; set it here, not with the player.ratio setter
+  reactions: {
+    enabled: true,
+    channel: 'Web', // or 'Mobile' in the brand's app (web view)
+    brand: 'Brand name',
+  },
+});
+```
+
+Or with an attribute: `data-plyr-config='{"reactions":{"enabled":true,"brand":"Brand name"}}'`.
+
+A video without an ID doesn't show the React button (a warning is logged with `debug: true`). YouTube, Vimeo and audio aren't supported.
+
+The reactions are a fixed set of 7, shown in this order for every brand:
+
+| Code        | Reaction |
+| ----------- | -------- |
+| `thumbs_up` | 👍       |
+| `heart`     | ❤️       |
+| `clap`      | 👏       |
+| `wow`       | 😲       |
+| `sad`       | 😢       |
+| `fire`      | 🔥       |
+| `angry`     | 😡       |
+
+**The `reaction` event** fires on every change, not when a stored reaction is restored on load. Plyr has no analytics vendor code; map the event in your own analytics:
+
+```js
+player.on('reaction', (event) => {
+  const { video_id, reaction, channel, brand } = event.detail;
+  // reaction is one of the codes above, or 'removed'
+});
+```
+
+**Storage:** the reaction is kept in `localStorage`, inside Plyr's storage object (`storage.key`, default `plyr`), as `reactions: { "<video ID>": "<code>" }`. Nothing is sent to a server, and no counts are shown. If storage is blocked or `storage.enabled` is `false`, reactions still work and fire events but aren't remembered.
+
+**Labels** can be translated through `i18n`: `react`, `reactCurrent` (`{reaction}` is replaced with the reaction's label), `reactions`, and `reactionLabels.<code>`.
 
 ## Preview thumbnails
 
