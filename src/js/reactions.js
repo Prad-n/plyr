@@ -10,7 +10,7 @@ import i18n from './utils/i18n';
 import is from './utils/is';
 import { replaceAll } from './utils/strings';
 
-// The known reaction codes and their emoji, in the default order
+// The reactions and their emoji, in the order shown. The set is fixed: brands can't change it.
 export const reactionTypes = {
   thumbs_up: '👍',
   heart: '❤️',
@@ -21,8 +21,7 @@ export const reactionTypes = {
   angry: '😡',
 };
 
-// The most reactions shown in the row
-const maxReactions = 7;
+const codes = Object.keys(reactionTypes);
 
 // Storage key (inside Plyr's own storage object): { [videoId]: code }
 const storageKey = 'reactions';
@@ -55,32 +54,11 @@ const reactions = {
     return true;
   },
 
-  // The brand's chosen reactions: known codes only, no duplicates, at most 7
-  getOptions() {
-    const { options } = this.config.reactions;
-    const list = is.array(options) ? options : Object.keys(reactionTypes);
-    const valid = [];
-
-    list.forEach((code) => {
-      if (!Object.keys(reactionTypes).includes(code) || valid.includes(code)) {
-        this.debug.warn(`Ignoring reaction option: ${code}`);
-        return;
-      }
-      valid.push(code);
-    });
-
-    if (valid.length > maxReactions) {
-      valid.length = maxReactions;
-    }
-
-    return valid;
-  },
-
   // Read and write the stored reaction for this video
   getStored() {
     const store = this.storage.get(storageKey);
     const code = is.object(store) ? store[this.reactions.videoId] : null;
-    return this.reactions.options.includes(code) ? code : null;
+    return codes.includes(code) ? code : null;
   },
 
   setStored(code) {
@@ -108,7 +86,6 @@ const reactions = {
 
     this.reactions = {
       videoId: reactions.getVideoId.call(this),
-      options: reactions.getOptions.call(this),
       current: null,
     };
 
@@ -150,7 +127,7 @@ const reactions = {
       hidden: '',
     });
 
-    const items = this.reactions.options.map((code) => {
+    const items = codes.map((code) => {
       const item = createElement('button', {
         type: 'button',
         class: 'plyr__reactions__item',
@@ -226,7 +203,7 @@ const reactions = {
       reactions.position.call(this);
 
       // Focus the current reaction, or the first one
-      const index = Math.max(0, this.reactions.options.indexOf(this.reactions.current));
+      const index = Math.max(0, codes.indexOf(this.reactions.current));
       setFocus.call(this, elements.items[index], true);
     } else if (focusButton) {
       setFocus.call(this, elements.button, true);
@@ -263,7 +240,7 @@ const reactions = {
 
   // Pick a reaction: a new one sets or switches it, the same one again removes it
   select(code) {
-    if (!this.reactions || !this.reactions.options.includes(code)) {
+    if (!this.reactions || !codes.includes(code)) {
       return;
     }
 

@@ -187,7 +187,7 @@ describe('Reactions (FEAT-001)', () => {
   });
 
   // R6
-  it('shows the 7 default reactions in order, with labels', () => {
+  it('shows the 7 fixed reactions in order, with labels', () => {
     const player = setup(video(), { reactions: brand });
     const items = el(player).items;
 
@@ -206,12 +206,12 @@ describe('Reactions (FEAT-001)', () => {
   });
 
   // R6
-  it("uses the brand's subset and order, dropping unknown codes and duplicates", () => {
+  it('keeps the fixed set: an options setting is ignored', () => {
     const player = setup(video(), {
-      reactions: { ...brand, options: ['fire', 'heart', 'unknown', 'fire', 'laugh'] },
+      reactions: { ...brand, options: ['fire', 'heart', 'laugh'] },
     });
 
-    expect(el(player).items.map((i) => i.getAttribute('data-reaction'))).toEqual(['fire', 'heart']);
+    expect(el(player).items.map((i) => i.getAttribute('data-reaction'))).toEqual(allCodes);
   });
 
   // R7, R11, R12

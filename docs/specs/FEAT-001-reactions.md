@@ -10,7 +10,7 @@ In scope (phase 1):
 
 - A brand-level `reactions` option, off by default, that a brand turns on once for its site or app (in the constructor options, `Plyr.defaults`, `Plyr.setup()`, or the existing `data-plyr-config` attribute). It holds no per-video settings.
 - A per-video ID, separate from `reactions`: a `data-plyr-video-id` attribute on the `<video>` (like the existing `data-plyr-embed-id`), or a top-level `videoId` option for players created in JavaScript.
-- A **React** button in the controls bar, and a reaction row (a small bubble above the button) with up to 7 reactions.
+- A **React** button in the controls bar, and a reaction row (a small bubble above the button) with a fixed set of 7 reactions.
 - One reaction per viewer per video: pick, switch, or remove (pick the same one again).
 - The viewer's reaction remembered in `localStorage` per video ID, using Plyr's existing `Storage`.
 - A `reaction` event with `video_id`, `reaction`, `channel` and `brand`, fired on every change.
@@ -27,7 +27,7 @@ In scope (phase 1):
 | R3  | **Each video has the brand's own ID**, from `data-plyr-video-id` on the `<video>` or the top-level `videoId` option (the attribute wins if both are set). | If reactions are on but the video has no ID, that player doesn't render the button and logs a warning (`debug` console). No events fire. Other players on the page are unaffected.                                                                                                                                                                                                                                               |
 | R4  | **HTML5 video only.**                                                                                                                                     | The button isn't rendered for audio, YouTube or Vimeo, even when `enabled` is true.                                                                                                                                                                                                                                                                                                                                              |
 | R5  | **React button opens a row of reactions in a bubble above it.**                                                                                           | Clicking the button shows the row (`hidden` removed, `aria-expanded="true"`). Clicking it again, pressing Escape, or clicking outside closes it (`aria-expanded="false"`).                                                                                                                                                                                                                                                       |
-| R6  | **Reactions: up to 7, chosen by the brand; default 👍 ❤️ 👏 😲 😢 🔥 😡.**                                                                                | Default row shows the 7 codes in this order: `thumbs_up`, `heart`, `clap`, `wow`, `sad`, `fire`, `angry`. `options: ['fire', 'heart']` shows only those two, in that order. Unknown codes and duplicates are dropped with a warning; at most 7 are shown.                                                                                                                                                                        |
+| R6  | **Reactions: a fixed set of 7, the same for every brand: 👍 ❤️ 👏 😲 😢 🔥 😡** (PM decision, see F4).                                                    | The row shows the 7 codes in this order: `thumbs_up`, `heart`, `clap`, `wow`, `sad`, `fire`, `angry`. There's no setting to change the set or the order; an `options` value in the config is ignored.                                                                                                                                                                                                                            |
 | R7  | **Pick one: row closes and the button shows the chosen reaction.**                                                                                        | After picking `heart`, the row is hidden, the button shows ❤️, `aria-pressed="true"` on the ❤️ item, and the button's accessible name says the current reaction (for example "React, current reaction: Heart").                                                                                                                                                                                                                  |
 | R8  | **One reaction per viewer per video; switch; same again removes.**                                                                                        | Pick `heart` then `fire`: stored value is `fire`, only `fire` is pressed. Pick `fire` again: stored value removed, nothing pressed, button back to its default icon.                                                                                                                                                                                                                                                             |
 | R9  | **Remembered on the device across visits.** Nothing sent to a server.                                                                                     | A new player with the same video ID (after `destroy()`, or on reload) shows the stored reaction. A different video ID shows none. The player makes no `fetch`/XHR call for reactions.                                                                                                                                                                                                                                            |
@@ -37,7 +37,7 @@ In scope (phase 1):
 | R13 | **No analytics vendor code.**                                                                                                                             | No vendor names or calls in `src/`. The brand maps the event.                                                                                                                                                                                                                                                                                                                                                                    |
 | R14 | **Accessible: keyboard, touch, screen readers.**                                                                                                          | Button: `aria-haspopup`, `aria-expanded`, `aria-controls`. Row: `role="group"` with a label; each item is a `<button>` with a text label ("Heart") and `aria-pressed`. Opening moves focus to the current (or first) reaction; Left/Right/Home/End move between reactions; Escape closes and returns focus to the React button; Space/Enter on an item doesn't toggle playback. Touch targets ≥ 44 × 44 CSS px on touch devices. |
 | R15 | **Works on a 9:16 player on phone-sized screens.**                                                                                                        | In the demo at 360 × 640 the React button sits in the controls bar and the 7-item row fits inside the player (no horizontal overflow, no clipping). Checked by hand in the demo; jsdom can't lay out.                                                                                                                                                                                                                            |
-| R16 | **No performance cost: no extra network requests, no start-up delay, small file growth.**                                                                 | No new sprite icon and no new requests (the icon is an inline SVG and reactions are emoji text). The row is built only when enabled. JS and CSS size growth is measured (min + gzip) and reported in the PR against the tech lead's budget (see Flag F3).                                                                                                                                                                        |
+| R16 | **No performance cost: no extra network requests, no start-up delay, small file growth.**                                                                 | No new sprite icon and no new requests (the icon is an inline SVG and reactions are emoji text). The row is built only when enabled. JS and CSS growth is measured (min + gzip) and is within "a few KB" (see F3).                                                                                                                                                                                                               |
 | R17 | **Frozen build settings.**                                                                                                                                | No change to the build target, CSS toolchain or pinned PostCSS versions. `pnpm build:player`, `pnpm lint`, `pnpm fmt:check`, `pnpm typecheck` and `pnpm test` pass.                                                                                                                                                                                                                                                              |
 | R18 | **Testable before launch: demo page with reactions on and a vertical sample video.**                                                                      | `demo/index.html` has a 9:16 player with reactions on, `ratio: '9:16'` set **at creation** (the runtime `player.ratio` setter is broken, Prad-n/plyr#5, not fixed here), an openly licensed vertical video with its credit and licence, and an on-page log of `reaction` events.                                                                                                                                                 |
 
@@ -53,7 +53,6 @@ reactions: {
   enabled: false,
   channel: 'Web',  // 'Web' or 'Mobile'; passed through to the event
   brand: '',       // brand name; passed through to the event
-  options: ['thumbs_up', 'heart', 'clap', 'wow', 'sad', 'fire', 'angry'],
 },
 
 // Per video: the brand's own ID. Top-level, not part of `reactions`.
@@ -62,7 +61,7 @@ videoId: null,
 
 The video ID is read from `data-plyr-video-id` on the media element first, then from `config.videoId`. Using a `data-plyr-*` attribute on the element follows the existing `data-plyr-provider` and `data-plyr-embed-id` pattern, so a page can set up many videos with one shared `reactions` config.
 
-The 7 known codes and their emoji are a fixed map in the reactions module. `options` selects and orders from that map. Labels come from `i18n` (`react`, `reactionCurrent`, and one label per code, for example `heart: 'Heart'`), so brands can translate them like any other Plyr label.
+The 7 codes and their emoji are a fixed map in the reactions module, shown in that order for every brand; there's no option to change them. Labels come from `i18n` (`react`, `reactCurrent`, `reactions`, and `reactionLabels.<code>`, for example `reactionLabels.heart: 'Heart'`), so brands can translate them like any other Plyr label.
 
 ### 3.2 Control
 
@@ -100,7 +99,7 @@ The 7 known codes and their emoji are a fixed map in the reactions module. `opti
 
 A plain module with methods called as `fn.call(player)`, like the other modules.
 
-- `setup()`: checks R2–R4, resolves the video ID (attribute, then option), normalises `options`, reads the stored reaction for that ID, and updates the button without firing an event.
+- `setup()`: checks R2–R4, resolves the video ID (attribute, then option), reads the stored reaction for that ID, and updates the button without firing an event.
 - `toggleRow(show)`: shows/hides the row, updates `aria-expanded`, adds a container class (`plyr--reactions-open`) so the controls don't auto-hide while the row is open, and manages focus.
 - `select(code)`: same as current → remove; otherwise set. Updates storage, the button and `aria-pressed`, closes the row, returns focus to the button, then fires `reaction`.
 - Keyboard handling sits on the row (Left/Right/Home/End/Escape) and stops these keys reaching Plyr's global shortcuts (seek, volume). A document click outside closes the row, as with the settings menu.
@@ -125,7 +124,7 @@ New file `tests/reactions.test.js` (Vitest + jsdom, same mocks as the smoke test
 2. Turned on with options, with `data-plyr-config`, and with one shared config across two videos with different IDs (R2).
 3. Video ID from `data-plyr-video-id`, from the `videoId` option, and the attribute winning over the option; no ID: no button, warning logged (R3). Audio element: no button (R4).
 4. Button opens and closes the row; `aria-expanded` follows; Escape and outside click close it (R5, R14).
-5. Default set and order; brand subset and order; unknown codes and duplicates dropped; max 7 (R6).
+5. The fixed set of 7 in order, with labels; an `options` value in the config doesn't change it (R6).
 6. Pick: row closes, button shows the emoji, `aria-pressed` set; event fired with all four fields (R7, R11, R12).
 7. Switch and remove: storage updated, removal sends `removed` and deletes the entry (R8, R10).
 8. Remembered: new player with the same video ID restores the reaction without firing an event; another video ID shows none (R9, R11).
@@ -144,7 +143,8 @@ Also out of scope for this change:
 
 - Fixing the `player.ratio` setter (Prad-n/plyr#5).
 - Changing the video ID after setup or on a `player.source` change: one video ID per player instance in phase 1.
-- Custom controls HTML (`controls` as a string or function) and custom (non-default) reaction codes or emoji.
+- Custom controls HTML (`controls` as a string or function).
+- Changing the set of reactions or their order per brand, and custom reaction codes or emoji (see F4).
 - HLS (`.m3u8`) support.
 - A public JavaScript API for reactions beyond the option and the event.
 
@@ -152,8 +152,8 @@ Also out of scope for this change:
 
 - **F1 — Engagement target (5% of plays react in month 1)** can't be met or measured by the player. It depends on rollout and on the brands' analytics. The player supplies the `reaction` event; measuring plays and reactions is for the analytics teams.
 - **F2 — "Analytics works in UAT with all four fields"** can only be partly verified here: tests check the event and its fields. Seeing it in Adobe Analytics needs a brand's UAT setup and mapping, which is out of scope.
-- **F3 — File size budget** is "set by the tech lead" and isn't set yet. The PR reports the measured min + gzip growth of `plyr.min.js` and `plyr.css`; the tech lead needs to confirm it's within budget.
-- **F4 — "Up to 7 reactions, chosen by each brand"** is read as: a brand picks and orders from the 7 default codes. The intent says the event's `reaction` is "one of the codes above", so new codes or custom emoji aren't supported. PM to confirm.
+- **F3 — File size budget: met.** The intent asks for growth of "only a few KB". Measured with gzip -9 against the 3.8.5 build: `plyr.min.js` +1,869 B, `plyr.css` +244 B, `plyr.svg` unchanged, about +2.1 KB in total. No separate tech lead budget was set.
+- **F4 — Reactions are static: resolved.** The PM confirmed (26 Nov 2026) that no custom reactions are needed and the set can be static. All brands get the same 7 reactions in the same order; there's no `options` setting. This replaces "up to 7, chosen by each brand" in the intent.
 - **F5 — `channel` values** are passed through as given; the player doesn't detect web view vs browser (intent note 3).
 - **F6 — HLS:** not covered. If brands stream `.m3u8`, they need hls.js alongside Plyr; reactions would still work because they don't depend on the source type (intent note 2, needs TL confirmation).
 - **F7 — Storage settings:** if a brand sets `storage.enabled: false`, reactions aren't remembered across visits. That's consistent with how Plyr treats volume and speed, but differs from "remembered until the viewer clears their data".

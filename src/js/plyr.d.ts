@@ -498,6 +498,7 @@ declare namespace Plyr {
 
     /**
      * Reactions (off by default). Set once per brand; the same for every video. HTML5 video only.
+     * The 7 reactions are fixed: thumbs_up, heart, clap, wow, sad, fire, angry.
      */
     reactions?: ReactionsOptions;
 
@@ -607,8 +608,6 @@ declare namespace Plyr {
     channel?: 'Web' | 'Mobile' | string;
     /** The brand's name, passed through to the `reaction` event. */
     brand?: string;
-    /** Which reactions to show, in order. Defaults to all 7. */
-    options?: ReactionCode[];
   }
 
   interface PreviewThumbnailsOptions {

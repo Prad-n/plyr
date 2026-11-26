@@ -56,8 +56,6 @@ const defaults = {
     channel: 'Web',
     // Passed through to the `reaction` event
     brand: '',
-    // Which reactions to show, in order (from the 7 known codes)
-    options: ['thumbs_up', 'heart', 'clap', 'wow', 'sad', 'fire', 'angry'],
   },
 
   // Click video container to play/pause
