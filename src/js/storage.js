@@ -63,6 +63,26 @@ class Storage {
       window.localStorage.setItem(this.key, JSON.stringify(storage));
     } catch {}
   };
+
+  // Replace one top-level key, or remove it when the value is undefined.
+  // set() deep-merges, so it can't remove a nested entry (used by reactions).
+  replace = (key, value) => {
+    if (!Storage.supported || !this.enabled || !is.string(key) || !key.length) {
+      return;
+    }
+
+    const storage = this.get() || {};
+
+    if (is.nullOrUndefined(value)) {
+      delete storage[key];
+    } else {
+      storage[key] = value;
+    }
+
+    try {
+      window.localStorage.setItem(this.key, JSON.stringify(storage));
+    } catch {}
+  };
 }
 
 export default Storage;

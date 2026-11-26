@@ -45,6 +45,21 @@ const defaults = {
   // The format must be `'w:h'` (e.g. `'16:9'`)
   ratio: null,
 
+  // The brand's own ID for this video, used by reactions
+  // `data-plyr-video-id` on the media element takes precedence
+  videoId: null,
+
+  // Reactions (off by default); set once per brand, the same for every video
+  reactions: {
+    enabled: false,
+    // Passed through to the `reaction` event: 'Web' or 'Mobile'
+    channel: 'Web',
+    // Passed through to the `reaction` event
+    brand: '',
+    // Which reactions to show, in order (from the 7 known codes)
+    options: ['thumbs_up', 'heart', 'clap', 'wow', 'sad', 'fire', 'angry'],
+  },
+
   // Click video container to play/pause
   clickToPlay: true,
 
@@ -137,6 +152,7 @@ const defaults = {
     // 'duration',
     'mute',
     'volume',
+    'reactions',
     'captions',
     'settings',
     'pip',
@@ -172,6 +188,18 @@ const defaults = {
     settings: 'Settings',
     pip: 'PIP',
     menuBack: 'Go back to previous menu',
+    react: 'React',
+    reactCurrent: 'React, current reaction: {reaction}',
+    reactions: 'Reactions',
+    reactionLabels: {
+      thumbs_up: 'Thumbs up',
+      heart: 'Heart',
+      clap: 'Clap',
+      wow: 'Wow',
+      sad: 'Sad',
+      fire: 'Fire',
+      angry: 'Angry',
+    },
     speed: 'Speed',
     normal: 'Normal',
     quality: 'Quality',
@@ -225,6 +253,7 @@ const defaults = {
     fullscreen: null,
     pip: null,
     airplay: null,
+    reactions: null,
     speed: null,
     quality: null,
     loop: null,
@@ -258,6 +287,7 @@ const defaults = {
 
     // Custom events
     'download',
+    'reaction',
     'enterfullscreen',
     'exitfullscreen',
     'captionsenabled',
@@ -307,6 +337,7 @@ const defaults = {
       fullscreen: '[data-plyr="fullscreen"]',
       pip: '[data-plyr="pip"]',
       airplay: '[data-plyr="airplay"]',
+      reactions: '[data-plyr="reactions"]',
       settings: '[data-plyr="settings"]',
       loop: '[data-plyr="loop"]',
     },

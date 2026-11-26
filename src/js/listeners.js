@@ -4,6 +4,7 @@
 
 import defaults from './config/defaults';
 import controls from './controls';
+import reactions from './reactions';
 import ui from './ui';
 import { repaint } from './utils/animation';
 import browser from './utils/browser';
@@ -601,6 +602,11 @@ class Listeners {
 
     // Airplay
     this.bind(elements.buttons.airplay, 'click', player.airplay, 'airplay');
+
+    // Reactions: open or close the row (items are bound in reactions.js)
+    if (elements.reactions) {
+      this.bind(elements.reactions.button, 'click', () => reactions.toggleRow.call(player), 'reactions');
+    }
 
     // Settings menu - click toggle
     this.bind(

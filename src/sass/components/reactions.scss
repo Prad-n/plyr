@@ -1,0 +1,91 @@
+// --------------------------------------------------------------
+// Reactions (FEAT-001)
+// --------------------------------------------------------------
+
+.plyr__reactions {
+  display: flex;
+  position: relative;
+
+  // The chosen reaction replaces the icon on the button
+  &--selected .plyr__control svg {
+    display: none;
+  }
+
+  &__current {
+    display: block;
+    font-size: $plyr-control-icon-size;
+    height: $plyr-control-icon-size;
+    line-height: 1;
+    text-align: center;
+    width: $plyr-control-icon-size;
+  }
+
+  // The bubble above the button; reactions.js shifts it to stay inside the player
+  &__row {
+    animation: plyr-popup 0.2s ease;
+    background: $plyr-menu-background;
+    border-radius: $plyr-menu-radius;
+    bottom: 100%;
+    box-shadow: $plyr-menu-shadow;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+    left: 50%;
+    margin-bottom: 10px;
+    padding: calc(#{$plyr-control-padding} / 2);
+    position: absolute;
+    // `translate`, not `transform`, so the plyr-popup animation doesn't override it
+    translate: calc(-50% + var(--plyr-reactions-shift, 0px)) 0;
+    width: max-content;
+    z-index: 3;
+
+    // Arrow, kept over the button when the bubble is shifted
+    &::after {
+      border: $plyr-menu-arrow-size solid transparent;
+      border-top-color: $plyr-menu-background;
+      content: '';
+      height: 0;
+      left: calc(50% - var(--plyr-reactions-shift, 0px));
+      position: absolute;
+      top: 100%;
+      transform: translateX(-50%);
+      width: 0;
+    }
+  }
+
+  &__item {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: $plyr-control-radius;
+    cursor: pointer;
+    display: flex;
+    font-size: 22px;
+    height: 36px;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    transition: transform 0.15s ease;
+    width: 36px;
+
+    &:hover {
+      transform: scale(1.15);
+    }
+
+    &:focus-visible {
+      @include plyr-focus-visible;
+    }
+
+    &[aria-pressed='true'] {
+      background: rgba(#000, 0.12);
+    }
+  }
+}
+
+// Bigger touch targets
+.plyr--is-touch .plyr__reactions__item {
+  height: 44px;
+  width: 44px;
+}

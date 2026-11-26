@@ -4,6 +4,7 @@
 
 import captions from './captions';
 import controls from './controls';
+import reactions from './reactions';
 import support from './support';
 import { getElement, toggleClass } from './utils/elements';
 import { ready, triggerEvent } from './utils/events';
@@ -263,10 +264,19 @@ const ui = {
       // Don't hide controls if a touch-device user recently seeked. (Must be limited to touch devices, or it occasionally prevents desktop controls from hiding.)
       const recentTouchSeek = this.touch && this.lastSeekTime + 2000 > Date.now();
 
-      // Show controls if force, loading, paused, button interaction, or recent seek, otherwise hide
+      // Keep controls shown while the reaction row is open
+      const reactionsOpen = reactions.isOpen.call(this);
+
+      // Show controls if force, loading, paused, button interaction, open reactions, or recent seek, otherwise hide
       this.toggleControls(
         Boolean(
-          force || this.loading || this.paused || controlsElement.pressed || controlsElement.hover || recentTouchSeek,
+          force ||
+          this.loading ||
+          this.paused ||
+          controlsElement.pressed ||
+          controlsElement.hover ||
+          reactionsOpen ||
+          recentTouchSeek,
         ),
       );
     }

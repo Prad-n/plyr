@@ -277,6 +277,7 @@ declare namespace Plyr {
     controlshidden: PlyrEvent;
     controlsshown: PlyrEvent;
     ready: PlyrEvent;
+    reaction: PlyrReactionEvent;
   };
   // For retrocompatibility, we keep StandardEvent
   type StandardEvent = keyof Plyr.StandardEventMap;
@@ -345,7 +346,7 @@ declare namespace Plyr {
     /**
      * If a function is passed, it is assumed your method will return either an element or HTML string for the controls. Three arguments will be passed to your function;
      * id (the unique id for the player), seektime (the seektime step in seconds), and title (the media title). See CONTROLS.md for more info on how the html needs to be structured.
-     * Defaults to ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen']
+     * Defaults to ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'reactions', 'captions', 'settings', 'pip', 'airplay', 'fullscreen']
      */
     controls?: string | string[] | ((id: string, seektime: number, title: string) => unknown) | Element;
 
@@ -490,6 +491,17 @@ declare namespace Plyr {
     storage?: StorageOptions;
 
     /**
+     * The brand's own ID for this video, sent as `video_id` in the `reaction` event and used to remember the viewer's reaction.
+     * A `data-plyr-video-id` attribute on the media element takes precedence.
+     */
+    videoId?: string | null;
+
+    /**
+     * Reactions (off by default). Set once per brand; the same for every video. HTML5 video only.
+     */
+    reactions?: ReactionsOptions;
+
+    /**
      * selected: The default speed for playback. options: The speed options to display in the UI. YouTube and Vimeo will ignore any options outside of the 0.5-2 range, so options outside of this range will be hidden automatically.
      */
     speed?: SpeedOptions;
@@ -584,6 +596,19 @@ declare namespace Plyr {
   interface StorageOptions {
     enabled?: boolean;
     key?: string;
+  }
+
+  type ReactionCode = 'thumbs_up' | 'heart' | 'clap' | 'wow' | 'sad' | 'fire' | 'angry';
+
+  interface ReactionsOptions {
+    /** Turn reactions on. Defaults to false. */
+    enabled?: boolean;
+    /** Passed through to the `reaction` event. Defaults to 'Web'. */
+    channel?: 'Web' | 'Mobile' | string;
+    /** The brand's name, passed through to the `reaction` event. */
+    brand?: string;
+    /** Which reactions to show, in order. Defaults to all 7. */
+    options?: ReactionCode[];
   }
 
   interface PreviewThumbnailsOptions {
@@ -716,6 +741,17 @@ declare namespace Plyr {
     PAUSED = 2,
     BUFFERING = 3,
     CUED = 5,
+  }
+
+  interface PlyrReactionEvent extends CustomEvent {
+    readonly detail: {
+      readonly plyr: Plyr;
+      readonly video_id: string;
+      /** The chosen reaction, or 'removed' when the viewer removes it. */
+      readonly reaction: ReactionCode | 'removed';
+      readonly channel: string;
+      readonly brand: string;
+    };
   }
 
   interface PlyrStateChangeEvent extends CustomEvent {
